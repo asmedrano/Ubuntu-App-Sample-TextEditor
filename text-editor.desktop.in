@@ -1,0 +1,8 @@
+[Desktop Entry]
+_Name=Text Editor
+_Comment=TextEditor application
+Categories=GNOME;Utility;
+Exec=text-editor
+Icon=text-editor
+Terminal=false
+Type=Application
