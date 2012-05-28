@@ -11,7 +11,7 @@ import gettext
 from gettext import gettext as _
 gettext.textdomain('text-editor')
 
-from gi.repository import Gtk # pylint: disable=E0611
+from gi.repository import Gtk, Gdk # pylint: disable=E0611
 import logging
 logger = logging.getLogger('text_editor')
 
@@ -32,7 +32,9 @@ class TextEditorWindow(Window):
 
         self.AboutDialog = AboutTextEditorDialog
         self.PreferencesDialog = PreferencesTextEditorDialog
-        # Code for other initialization actions should be added here.
+	    # Code for other initialization actions should be added here.
+		
+		self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
 	def file_new_handler(self, widget, data=None):
 		""" Resets TextBuffer
@@ -131,6 +133,18 @@ class TextEditorWindow(Window):
 			
 			dialog.destroy()
 	
+	def copy_to_clipboard(self, widget, data=None):
+		""" Copy selected text to clipboard"""
+		#print "Copying text"
+		buff = self._get_buffer()
+		buff.copy_clipboard(self.clipboard)
+
+	def paste_from_clipboard(self, widget, data=None):
+		""" Paste from Clipboard """
+		#print "Pasting from clipboard"
+		buff = self._get_buffer()
+		buff.paste_clipboard(self.clipboard, None, True)
+
 
 	#---- helper methods----#
 
