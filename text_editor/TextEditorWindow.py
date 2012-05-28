@@ -35,7 +35,7 @@ class TextEditorWindow(Window):
 	    # Code for other initialization actions should be added here.
 		
 		self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-
+		self.clipboard.clear()
 	def file_new_handler(self, widget, data=None):
 		""" Resets TextBuffer
 		"""
@@ -138,6 +138,12 @@ class TextEditorWindow(Window):
 		#print "Copying text"
 		buff = self._get_buffer()
 		buff.copy_clipboard(self.clipboard)
+	
+	def cut_to_clipboard(self, widget, data=None):
+		""" Cut selected text to clipboard"""
+		#print "Copying text"
+		buff = self._get_buffer()
+		buff.cut_clipboard(self.clipboard, True)
 
 	def paste_from_clipboard(self, widget, data=None):
 		""" Paste from Clipboard """
