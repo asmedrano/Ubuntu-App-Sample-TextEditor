@@ -4,7 +4,6 @@
 ### END LICENSE
 
 #### What this app should do ####
-#TODO: Users should be able to C/R/U/D Text Files
 #TODO:
 
 
@@ -60,7 +59,7 @@ class TextEditorWindow(Window):
 			self.save_buffer_to_file_AS(widget)
 		else:
 			try:
-				f = open(self.working_file_path, "w")
+				f = open(self.working_file_path, "rw")
 				buff = self._get_buffer()
 				f.writelines(self._get_text())
 				#update modified flag
@@ -151,6 +150,5 @@ class TextEditorWindow(Window):
 		""" Set text in TextBuffer"""
 		buff = self._get_buffer()
 		buff.set_text(text)
-
 		return True
 	
