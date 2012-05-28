@@ -19,6 +19,8 @@ from text_editor_lib import Window
 from text_editor.AboutTextEditorDialog import AboutTextEditorDialog
 from text_editor.PreferencesTextEditorDialog import PreferencesTextEditorDialog
 
+from text_editor.widget_text_editor import TextEditor
+
 # See text_editor_lib.Window.py for more details about how this class works
 class TextEditorWindow(Window):
     __gtype_name__ = "TextEditorWindow"
@@ -36,6 +38,17 @@ class TextEditorWindow(Window):
 		
 		self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 		self.clipboard.clear()
+
+		self.editor = TextEditor()
+		self.editor.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+		self.editor.set_pixels_above_lines(2)
+		self.editor.set_pixels_below_lines(2)
+		self.editor.set_pixels_inside_wrap(4)
+		self.editor.show()
+		self.builder.get_object("vbox1").pack_start(self.editor, True, True,0)
+
+
+
 	def file_new_handler(self, widget, data=None):
 		""" Resets TextBuffer
 		"""
@@ -61,7 +74,7 @@ class TextEditorWindow(Window):
 			self.save_buffer_to_file_AS(widget)
 		else:
 			try:
-				f = open(self.working_file_path, "rw")
+				f = open(self.working_file_path, "rw+")
 				buff = self._get_buffer()
 				f.writelines(self._get_text())
 				#update modified flag
@@ -69,6 +82,7 @@ class TextEditorWindow(Window):
 				f.close()
 
 			except IOError as e:
+				print "COULDNT OPEN FILE"
 				self.save_buffer_to_file_AS(widget)
 
 
@@ -130,7 +144,7 @@ class TextEditorWindow(Window):
 					buff.set_modified(False)
 
 				self.working_file_path = file_selected
-			
+
 			dialog.destroy()
 	
 	def copy_to_clipboard(self, widget, data=None):
@@ -150,13 +164,19 @@ class TextEditorWindow(Window):
 		#print "Pasting from clipboard"
 		buff = self._get_buffer()
 		buff.paste_clipboard(self.clipboard, None, True)
+	
+	
+	def undo_action_handler(self, widget, data=None):
+		self.editor.undo()
 
 
 	#---- helper methods----#
+	
+	
 
 	def _get_buffer(self):
 		"""returns main TextBuffer"""
-		return self.builder.get_object("write_view").get_buffer()
+		return self.editor.get_buffer()
 
 	def _get_text(self):
 		""" Returns TextBuffer text"""
