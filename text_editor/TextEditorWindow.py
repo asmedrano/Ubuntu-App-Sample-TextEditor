@@ -4,8 +4,8 @@
 ### END LICENSE
 
 #### What this app should do ####
-#TODO:
-
+#TODO: Handle Exiting or creating new if changes are in buffer and file is not saved
+#TODO: Files are only able to be appended to :( need to fix this :D
 
 import gettext
 from gettext import gettext as _
@@ -34,20 +34,30 @@ class TextEditorWindow(Window):
 
         self.AboutDialog = AboutTextEditorDialog
         self.PreferencesDialog = PreferencesTextEditorDialog
+
 	    # Code for other initialization actions should be added here.
 		
 		self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 		self.clipboard.clear()
-
+		
+		# create editor
 		self.editor = TextEditor()
 		self.editor.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
 		self.editor.set_pixels_above_lines(2)
 		self.editor.set_pixels_below_lines(2)
 		self.editor.set_pixels_inside_wrap(4)
+		self.editor.set_left_margin(10)
+		self.editor.set_right_margin(10)
 		self.editor.show()
 		self.builder.get_object("vbox1").pack_start(self.editor, True, True,0)
 
-
+	def on_destroy(self, widget, data=None):
+		"""override the on_destroy() method so we can add in some pre close logic to our app
+		   At its most Basic, we could do this
+		   super(TextEditorWindow, self).on_destroy(widget)
+		   and the app would close as normal
+		"""
+		super(TextEditorWindow, self).on_destroy(widget)
 
 	def file_new_handler(self, widget, data=None):
 		""" Resets TextBuffer
@@ -76,7 +86,11 @@ class TextEditorWindow(Window):
 			try:
 				f = open(self.working_file_path, "rw+")
 				buff = self._get_buffer()
-				f.writelines(self._get_text())
+				
+				# delete everything in the file #TODO: Is this the best way to do this?
+				f.seek(0, 0)
+				
+				f.write(self._get_text())
 				#update modified flag
 				buff.set_modified(False)
 				f.close()
@@ -107,7 +121,7 @@ class TextEditorWindow(Window):
 			
 			with open(self.working_file_path,"w") as f:
 				f.writelines(self._get_text())
-
+			
 			#update modified flag
 			buff.set_modified(False)
 		dialog.destroy()
@@ -117,36 +131,43 @@ class TextEditorWindow(Window):
 		""" Opens an existing file. 
 			Checks to see if the buffer has been modified before opening it. 
 		"""
-
 		buff = self._get_buffer()
 		if buff.get_modified() == True:
 			print "There are changes, should we save them?"
+			if self.show_changes_dialog(widget) == 1:
+				print "User Hits ok"
+				self.save_buffer_to_file(widget)
+				self.show_file_chooser(buff, widget)
+			else:
+				self.show_file_chooser(buff, widget)
 		else:
-			# clear out the buffer
+			self.show_file_chooser(buff, widget)
 
-			dialog = Gtk.FileChooserDialog ("Open File", widget.get_toplevel(), Gtk.FileChooserAction.OPEN);
-			dialog.add_button(Gtk.STOCK_CANCEL, 0)
-			dialog.add_button(Gtk.STOCK_OK, 1)
-			dialog.set_default_response(1)
+	def show_file_chooser(self,buff, widget, data=None):
 
-			f_filter = Gtk.FileFilter()
-			f_filter.add_pattern("*.txt")
+		dialog = Gtk.FileChooserDialog ("Open File", widget.get_toplevel(), Gtk.FileChooserAction.OPEN);
+		dialog.add_button(Gtk.STOCK_CANCEL, 0)
+		dialog.add_button(Gtk.STOCK_OK, 1)
+		dialog.set_default_response(1)
+		
+		f_filter = Gtk.FileFilter()
+		f_filter.add_pattern("*.txt")
 
-			dialog.set_filter(f_filter)
+		dialog.set_filter(f_filter)
 
-			if dialog.run() ==1:
-				file_selected =dialog.get_filename()
-				# open file, read contents and send to TextBuff
-				with open(file_selected) as f:
-					data = f.read()
-					buff.delete(buff.get_start_iter(), buff.get_end_iter())
-					buff.set_text(data)
-					buff.set_modified(False)
+		if dialog.run() ==1:
+			file_selected =dialog.get_filename()				
+			# open file, read contents and send to TextBuff
+			with open(file_selected) as f:
+				data = f.read()
+				buff.delete(buff.get_start_iter(), buff.get_end_iter())
+				buff.set_text(data)
+				buff.set_modified(False)
 
-				self.working_file_path = file_selected
-
-			dialog.destroy()
+			self.working_file_path = file_selected
+		dialog.destroy()
 	
+
 	def copy_to_clipboard(self, widget, data=None):
 		""" Copy selected text to clipboard"""
 		#print "Copying text"
@@ -169,11 +190,30 @@ class TextEditorWindow(Window):
 	def undo_action_handler(self, widget, data=None):
 		self.editor.undo()
 
+	
+	def _on_window_destroy(self, widget, data=None):
+		self.check_close(widget)
+		
+	def show_changes_dialog(self,widget):
+		"""Opens a dialog that informs the user that there are changes to be saved """
+		dialog = Gtk.Dialog("Save changes to file?",widget.get_toplevel())
+
+		dialog.add_button(Gtk.STOCK_CANCEL, 0)
+		dialog.add_button(Gtk.STOCK_OK, 1)
+		dialog.set_default_response(1)
+
+		if dialog.run() == 1:
+			dialog.destroy()
+			return 1
+		else:
+			dialog.destroy()
+			return 0
+
+		
+
 
 	#---- helper methods----#
 	
-	
-
 	def _get_buffer(self):
 		"""returns main TextBuffer"""
 		return self.editor.get_buffer()
