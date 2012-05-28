@@ -243,6 +243,8 @@
           <object class="GtkTextView" id="write_view">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="left_margin">20</property>
+            <property name="right_margin">20</property>
           </object>
           <packing>
             <property name="expand">True</property>
