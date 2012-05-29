@@ -57,20 +57,24 @@ class TextEditorWindow(Window):
 		   super(TextEditorWindow, self).on_destroy(widget)
 		   and the app would close as normal
 		"""
+		buff = self._get_buffer()
+		if buff.get_modified() == True:
+			if self.show_changes_dialog(widget) == 1:
+				self.save_buffer_to_file(widget)
+		
 		super(TextEditorWindow, self).on_destroy(widget)
 
 	def file_new_handler(self, widget, data=None):
 		""" Resets TextBuffer
 		"""
-		print "CREATE NEW FILE"
-
 		buff = self._get_buffer()
 		if buff.get_modified() == True:
-			print "There are changes, should we save them?"
-		else:
-			# clear out the buffer
-			buff.delete(buff.get_start_iter(), buff.get_end_iter())
-
+			if self.show_changes_dialog(widget) == 1:
+				self.save_buffer_to_file(widget)
+		
+		buff.delete(buff.get_start_iter(), buff.get_end_iter())
+		# also reset the working_file_path
+		self.working_file_path=""
 		
 	def file_save_handler(self, widget, data=None):
 		print "SAVING FILE"
@@ -84,15 +88,16 @@ class TextEditorWindow(Window):
 			self.save_buffer_to_file_AS(widget)
 		else:
 			try:
-				f = open(self.working_file_path, "rw+")
+				f = open(self.working_file_path, "r+")
 				buff = self._get_buffer()
 				
-				# delete everything in the file #TODO: Is this the best way to do this?
-				f.seek(0, 0)
-				
+				f.seek(0)
+				f.truncate()
 				f.write(self._get_text())
+
 				#update modified flag
 				buff.set_modified(False)
+				
 				f.close()
 
 			except IOError as e:
@@ -132,16 +137,14 @@ class TextEditorWindow(Window):
 			Checks to see if the buffer has been modified before opening it. 
 		"""
 		buff = self._get_buffer()
+		
 		if buff.get_modified() == True:
 			print "There are changes, should we save them?"
 			if self.show_changes_dialog(widget) == 1:
 				print "User Hits ok"
 				self.save_buffer_to_file(widget)
-				self.show_file_chooser(buff, widget)
-			else:
-				self.show_file_chooser(buff, widget)
-		else:
-			self.show_file_chooser(buff, widget)
+		
+		self.show_file_chooser(buff, widget)
 
 	def show_file_chooser(self,buff, widget, data=None):
 
@@ -196,11 +199,13 @@ class TextEditorWindow(Window):
 		
 	def show_changes_dialog(self,widget):
 		"""Opens a dialog that informs the user that there are changes to be saved """
-		dialog = Gtk.Dialog("Save changes to file?",widget.get_toplevel())
-
-		dialog.add_button(Gtk.STOCK_CANCEL, 0)
-		dialog.add_button(Gtk.STOCK_OK, 1)
+		dialog = Gtk.MessageDialog(widget.get_toplevel())
+		dialog.set_default_size(310, 60)
+		dialog.format_secondary_text("Save changes to file?")
+		dialog.add_button(Gtk.STOCK_NO, 0)
+		dialog.add_button(Gtk.STOCK_YES, 1)
 		dialog.set_default_response(1)
+		
 
 		if dialog.run() == 1:
 			dialog.destroy()
