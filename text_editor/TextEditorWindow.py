@@ -49,7 +49,7 @@ class TextEditorWindow(Window):
 		self.editor.set_left_margin(10)
 		self.editor.set_right_margin(10)
 		self.editor.show()
-		self.builder.get_object("vbox1").pack_start(self.editor, True, True,0)
+		self.builder.get_object("hbox1").pack_start(self.editor, True, True,1)
 
 	def on_destroy(self, widget, data=None):
 		"""override the on_destroy() method so we can add in some pre close logic to our app
